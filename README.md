@@ -4,10 +4,10 @@ LINE ミニアプリとして動作するお問い合わせフォームです。
 
 ## 技術スタック
 
-- Next.js 16
-- LIFF SDK 2.27.2
+- Next.js 16.1.3
+- LIFF SDK 2.27.3
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 4
 
 ## セットアップ
 
@@ -49,6 +49,17 @@ http://localhost:3000 でアクセスできます。
    - エンドポイントURL: デプロイ後のURL
    - Scope: `profile`, `openid`
    - ボットリンク機能: On (Aggressive)
+
+### 2026年1月8日以降の重要な変更点
+
+2026年1月8日以降に作成される日本向けの新規LINEミニアプリチャネルでは、「チャネル同意の簡略化」機能の利用が必須となりました。
+
+この変更により:
+- ユーザーは `openid` スコープのみ自動で同意されます
+- `profile` スコープは別途同意が必要になる場合があります
+- 本アプリはプロフィール取得に失敗した場合でも正常に動作するよう設計されています（名前の自動入力がスキップされるだけ）
+
+詳細: [LINE Developers News](https://developers.line.biz/ja/news/)
 
 ### LIFF ID の取得
 
