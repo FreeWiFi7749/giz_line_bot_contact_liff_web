@@ -119,10 +119,17 @@ export default function InquiryForm() {
             </svg>
           </div>
           <h2 className="mb-2 text-xl font-bold text-gray-800">送信完了</h2>
-          <p className="mb-6 text-gray-600">
+          <p className="mb-4 text-gray-600">
             お問い合わせを受け付けました。<br />
             確認メールをお送りしましたのでご確認ください。
           </p>
+          <div className="mb-6 rounded-lg bg-yellow-50 p-3 text-left text-sm text-yellow-700">
+            <p className="font-medium">メールが届かない場合</p>
+            <ul className="mt-1 list-disc pl-4 text-xs">
+              <li>迷惑メールフォルダをご確認ください</li>
+              <li>メールアドレスに誤りがないかご確認ください</li>
+            </ul>
+          </div>
           {isLiffClient && (
             <button
               onClick={handleClose}
