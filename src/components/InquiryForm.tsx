@@ -111,7 +111,34 @@ export default function InquiryForm() {
 
   if (formState === "success") {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="relative flex min-h-screen items-center justify-center p-4">
+        {/* Hand-drawn style arrow pointing to minimize button */}
+        {isLiffClient && (
+          <div className="absolute right-4 top-4 flex items-start">
+            <div className="mr-2 mt-8 max-w-32 rounded-lg bg-green-100 p-2 text-xs text-green-700">
+              <p>右上の <span className="font-bold">v</span> から</p>
+              <p>閉じられます</p>
+            </div>
+            <svg 
+              className="h-16 w-12 text-green-500" 
+              viewBox="0 0 48 64" 
+              fill="none" 
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* Hand-drawn curved arrow pointing up-right */}
+              <path 
+                d="M8 56 C12 40, 20 28, 36 12" 
+                style={{ strokeDasharray: "none" }}
+              />
+              {/* Arrow head */}
+              <path d="M28 8 L36 12 L32 20" />
+            </svg>
+          </div>
+        )}
+        
         <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <svg className="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
