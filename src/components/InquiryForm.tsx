@@ -50,14 +50,29 @@ export default function InquiryForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      setErrorMessage("すべての項目を入力してください");
+    if (!name.trim()) {
+      setErrorMessage("お名前を入力してください");
+      return;
+    }
+
+    if (!email.trim()) {
+      setErrorMessage("メールアドレスを入力してください");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setErrorMessage("有効なメールアドレスを入力してください");
+      setErrorMessage("正しい形式のメールアドレスを入力してください（例: example@email.com）");
+      return;
+    }
+
+    if (!message.trim()) {
+      setErrorMessage("お問い合わせ内容を入力してください");
+      return;
+    }
+
+    if (message.trim().length < 10) {
+      setErrorMessage("お問い合わせ内容は10文字以上で入力してください");
       return;
     }
 
@@ -75,7 +90,7 @@ export default function InquiryForm() {
       setFormState("success");
     } catch (error) {
       setFormState("error");
-      setErrorMessage(error instanceof Error ? error.message : "送信に失敗しました");
+      setErrorMessage(error instanceof Error ? error.message : "送信できませんでした。しばらくしてからもう一度お試しください。");
     }
   };
 
@@ -96,7 +111,34 @@ export default function InquiryForm() {
 
   if (formState === "success") {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="relative flex min-h-screen items-center justify-center p-4">
+        {/* Hand-drawn style arrow pointing to minimize button */}
+        {isLiffClient && (
+          <div className="absolute right-4 top-4 flex items-start">
+            <div className="mr-2 mt-8 max-w-32 rounded-lg bg-green-100 p-2 text-xs text-green-700">
+              <p>右上の <span className="font-bold">v</span> から</p>
+              <p>閉じられます</p>
+            </div>
+            <svg 
+              className="h-16 w-12 text-green-500" 
+              viewBox="0 0 48 64" 
+              fill="none" 
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* Hand-drawn curved arrow pointing up-right */}
+              <path 
+                d="M8 56 C12 40, 20 28, 36 12" 
+                style={{ strokeDasharray: "none" }}
+              />
+              {/* Arrow head */}
+              <path d="M28 8 L36 12 L32 20" />
+            </svg>
+          </div>
+        )}
+        
         <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <svg className="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,10 +146,17 @@ export default function InquiryForm() {
             </svg>
           </div>
           <h2 className="mb-2 text-xl font-bold text-gray-800">送信完了</h2>
-          <p className="mb-6 text-gray-600">
+          <p className="mb-4 text-gray-600">
             お問い合わせを受け付けました。<br />
             確認メールをお送りしましたのでご確認ください。
           </p>
+          <div className="mb-6 rounded-lg bg-yellow-50 p-3 text-left text-sm text-yellow-700">
+            <p className="font-medium">メールが届かない場合</p>
+            <ul className="mt-1 list-disc pl-4 text-xs">
+              <li>迷惑メールフォルダをご確認ください</li>
+              <li>メールアドレスに誤りがないかご確認ください</li>
+            </ul>
+          </div>
           {isLiffClient && (
             <button
               onClick={handleClose}
@@ -134,7 +183,12 @@ export default function InquiryForm() {
         <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 shadow-lg">
           {(formState === "error" || errorMessage) && (
             <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {errorMessage || "エラーが発生しました。もう一度お試しください。"}
+              <div className="flex items-start">
+                <svg className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{errorMessage || "エラーが発生しました。もう一度お試しください。"}</span>
+              </div>
             </div>
           )}
 
@@ -166,6 +220,7 @@ export default function InquiryForm() {
               placeholder="example@email.com"
               disabled={formState === "submitting"}
             />
+            <p className="mt-1 text-xs text-gray-500">確認メールをお送りします</p>
           </div>
 
           <div className="mb-4">
@@ -197,9 +252,15 @@ export default function InquiryForm() {
               onChange={(e) => setMessage(e.target.value)}
               rows={5}
               className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-              placeholder="お問い合わせ内容をご記入ください"
+              placeholder="お問い合わせ内容をご記入ください（10文字以上）"
               disabled={formState === "submitting"}
             />
+            <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <span>10文字以上でご入力ください</span>
+              <span className={message.trim().length < 10 ? "text-orange-500" : "text-green-600"}>
+                {message.trim().length} / 10文字以上
+              </span>
+            </div>
           </div>
 
           <button
