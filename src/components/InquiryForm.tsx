@@ -327,7 +327,7 @@ export default function InquiryForm() {
             </button>
             <button
               type="submit"
-              disabled={formState === "submitting" || (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken)}
+              disabled={formState === "submitting" || Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken)}
               className="flex-[2] rounded-lg bg-green-500 px-4 py-3 font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {formState === "submitting" ? (
