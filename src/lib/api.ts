@@ -4,6 +4,7 @@ export interface InquiryData {
   category: string;
   message: string;
   idToken: string | null;
+  turnstileToken: string | null;
 }
 
 export interface ApiResponse {

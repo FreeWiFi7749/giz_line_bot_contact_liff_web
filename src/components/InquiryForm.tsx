@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { initializeLiff, getIdToken, getProfile, closeWindow, isInClient } from "@/lib/liff";
 import { submitInquiry } from "@/lib/api";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 const CATEGORIES = [
   { value: "general", label: "一般的なお問い合わせ" },
@@ -11,7 +12,7 @@ const CATEGORIES = [
   { value: "suggestion", label: "ご提案" },
 ];
 
-type FormState = "loading" | "form" | "submitting" | "success" | "error";
+type FormState = "loading" | "form" | "submitting" | "success" | "error" | "blocked";
 
 export default function InquiryForm() {
   const [formState, setFormState] = useState<FormState>("loading");
@@ -22,12 +23,22 @@ export default function InquiryForm() {
   const [message, setMessage] = useState("");
   const [idToken, setIdToken] = useState<string | null>(null);
   const [isLiffClient, setIsLiffClient] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     async function init() {
       try {
         await initializeLiff();
-        setIsLiffClient(isInClient());
+        const inClient = isInClient();
+        setIsLiffClient(inClient);
+        
+        // Block access from outside LINE app (anti-spam)
+        if (!inClient) {
+          setFormState("blocked");
+          return;
+        }
         
         const token = getIdToken();
         setIdToken(token);
@@ -40,7 +51,8 @@ export default function InquiryForm() {
         setFormState("form");
       } catch (error) {
         console.error("LIFF initialization failed:", error);
-        setFormState("form");
+        // If LIFF init fails, block access (likely not in LINE)
+        setFormState("blocked");
       }
     }
 
@@ -76,6 +88,34 @@ export default function InquiryForm() {
       return;
     }
 
+    if (!turnstileToken) {
+      setErrorMessage("認証を完了してください");
+      return;
+    }
+
+    setShowConfirmDialog(true);
+  };
+
+  const handleClose = () => {
+    closeWindow();
+  };
+
+  const handleReset = () => {
+    setName("");
+    setEmail("");
+    setCategory("general");
+    setMessage("");
+    setErrorMessage("");
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
+    doSubmit();
+  };
+
+  const doSubmit = async () => {
     setFormState("submitting");
     setErrorMessage("");
 
@@ -86,16 +126,15 @@ export default function InquiryForm() {
         category,
         message: message.trim(),
         idToken,
+        turnstileToken,
       });
       setFormState("success");
     } catch (error) {
       setFormState("error");
       setErrorMessage(error instanceof Error ? error.message : "送信できませんでした。しばらくしてからもう一度お試しください。");
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
-  };
-
-  const handleClose = () => {
-    closeWindow();
   };
 
   if (formState === "loading") {
@@ -104,6 +143,29 @@ export default function InquiryForm() {
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div>
           <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (formState === "blocked") {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-xl font-bold text-gray-800">アクセスできません</h2>
+          <p className="text-gray-600">
+            このフォームはLINEアプリからのみ<br />
+            ご利用いただけます。
+          </p>
+          <p className="mt-4 text-sm text-gray-500">
+            LINEアプリを開いて、<br />
+            お問い合わせメニューからアクセスしてください。
+          </p>
         </div>
       </div>
     );
@@ -150,6 +212,9 @@ export default function InquiryForm() {
           <h1 className="text-2xl font-bold text-gray-800">お問い合わせ</h1>
           <p className="mt-2 text-sm text-gray-600">
             以下のフォームからお問い合わせください
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            通常2〜3営業日以内にご返信いたします
           </p>
         </div>
 
@@ -236,26 +301,83 @@ export default function InquiryForm() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={formState === "submitting"}
-            className="w-full rounded-lg bg-green-500 px-4 py-3 font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400"
-          >
-            {formState === "submitting" ? (
-              <span className="flex items-center justify-center">
-                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
-                送信中...
-              </span>
-            ) : (
-              "送信する"
-            )}
-          </button>
+          {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+            <div className="mb-6 flex justify-center">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => {
+                  setTurnstileToken(null);
+                  setErrorMessage("認証に失敗しました。ページを再読み込みしてください。");
+                }}
+                onExpire={() => setTurnstileToken(null)}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={formState === "submitting"}
+              className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+            >
+              リセット
+            </button>
+            <button
+              type="submit"
+              disabled={formState === "submitting" || (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken)}
+              className="flex-[2] rounded-lg bg-green-500 px-4 py-3 font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {formState === "submitting" ? (
+                <span className="flex items-center justify-center">
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
+                  送信中...
+                </span>
+              ) : (
+                "送信する"
+              )}
+            </button>
+          </div>
         </form>
 
         <p className="mt-4 text-center text-xs text-gray-500">
           お問い合わせ内容は、ご入力いただいたメールアドレスにも送信されます。
         </p>
       </div>
+
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-bold text-gray-800">送信確認</h3>
+            <p className="mb-2 text-sm text-gray-600">以下の内容で送信します。よろしいですか？</p>
+            <div className="mb-4 rounded-lg bg-gray-50 p-3 text-sm">
+              <p><span className="font-medium">お名前:</span> {name}</p>
+              <p><span className="font-medium">メール:</span> {email}</p>
+              <p><span className="font-medium">種別:</span> {CATEGORIES.find(c => c.value === category)?.label}</p>
+              <p className="mt-2"><span className="font-medium">内容:</span></p>
+              <p className="mt-1 whitespace-pre-wrap text-gray-700">{message.length > 100 ? message.substring(0, 100) + "..." : message}</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSubmit}
+                className="flex-1 rounded-lg bg-green-500 px-4 py-2 font-medium text-white transition-colors hover:bg-green-600"
+              >
+                送信する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
