@@ -140,10 +140,10 @@ giz_line_bot_contact_liff_web/
 
 | リポジトリ | 説明 |
 |-----------|------|
-| [giz_line_bot_contact_api](https://github.com/FreeWiFi7749/giz_line_bot_contact_api) | お問い合わせAPI（バックエンド） |
-| [giz_line_bot](https://github.com/FreeWiFi7749/giz_line_bot) | LINE Bot バックエンド |
-| [giz_line_analytics_web](https://github.com/FreeWiFi7749/giz_line_analytics_web) | LINE Analytics ダッシュボード |
-| [giz_line_delivery_app](https://github.com/FreeWiFi7749/giz_line_delivery_app) | 手動配信アプリ |
+| [giz_line_bot_contact_api](https://github.com/FreeWiFi7749/giz_line_bot_contact_api) | お問い合わせAPI（FastAPI + Railway） |
+| [giz_line_bot](https://github.com/frwi-tech/giz_line_bot) | LINE Bot バックエンド（FastAPI + Railway） |
+| [giz_line_analytics_web](https://github.com/FreeWiFi7749/giz_line_analytics_web) | LINE Analytics ダッシュボード（Qwik + Cloudflare Pages） |
+| [giz_line_delivery_app](https://github.com/FreeWiFi7749/giz_line_delivery_app) | 手動配信アプリ（Qwik + Cloudflare Pages） |
 
 ## ライセンス
 
